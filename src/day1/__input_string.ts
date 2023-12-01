@@ -1,4 +1,4 @@
-export const input = `tmmnhlxzpj1eightldxhjnone97
+export const inputString = `tmmnhlxzpj1eightldxhjnone97
 9fivekfpl855mjmfdqzvbn
 two29eighteight1
 4md
