@@ -1,63 +1,19 @@
-import { stringByLine } from "../utils/string-by-line";
+export const parseLine = (line: string) => {
+  const lineNums = line.split(/\s/g).map(Number);
 
-export type Nodes = Map<string, Node>;
-export type Node = { label: string, destinations: string[] }
+  function getDiffs(numbers: number[], history: number[][] = []) {
+    const reductions = numbers.reduce<number[]>((diffs, number, index, arr) => {
+      if (index === arr.length - 1) return diffs;
+      diffs.push(arr[index + 1] - number);
+      return diffs;
+    }, []);
 
-export const parseInstructions = (input: string) => {
-  const [instructions, ...nodes] = stringByLine(input);
-  const parsedNodes = nodes.reduce<Nodes>((map, node) => {
-    const [nodeLabel, nodeDestinations] = node.replace(/\s+/g, '').split('=');
-    map.set(nodeLabel, {
-      label: nodeLabel,
-      destinations: nodeDestinations.replace(/[()]/g, '').split(',')
-    })
-    return map;
-  }, new Map());
-  return {directions: instructions.split(''), nodes: parsedNodes}
-}
-
-export const findNode = (label: string, nodes: Nodes) => {
-  return nodes.get(label)!;
-}
-
-export const calculateStepsToZZZ = (instructions: ReturnType<typeof parseInstructions>) => {
-  const startingNode = findNode('AAA', instructions.nodes);
-  if (!startingNode) return 0;
-  let stepsTaken = 0;
-  let currentNode: Node = startingNode;
-
-  while (currentNode.label !== 'ZZZ') {
-    const direction = instructions.directions[stepsTaken % instructions.directions.length];
-    if (direction === 'L') currentNode = findNode(currentNode.destinations[0], instructions.nodes);
-    if (direction === 'R') currentNode = findNode(currentNode.destinations[1], instructions.nodes);
-    stepsTaken++;
-    if (currentNode?.label === 'ZZZ') break;
-  }
-  return stepsTaken;
-}
-
-export const calculateStepsToAllZ = (instructions: ReturnType<typeof parseInstructions>) => {
-  const startingNodes = [...instructions.nodes.values()].filter(node => node.label.endsWith('A'));
-  if (startingNodes.length === 0) return 0;
-  const currentNodes: Node[] = startingNodes;
-
-  const stepsRequiredPer = currentNodes.map(node => {
-    let stepsTaken = 0;
-    let currentNode: Node = node;
-
-    while (!currentNode.label.endsWith('Z')) {
-      const direction = instructions.directions[stepsTaken % instructions.directions.length];
-      if (direction === 'L') currentNode = findNode(currentNode.destinations[0], instructions.nodes);
-      if (direction === 'R') currentNode = findNode(currentNode.destinations[1], instructions.nodes);
-      stepsTaken++;
+    if (reductions.every(n => n === 0)) {
+      // All zero, return current (should be our diffs)
+      return {numbers, history}
     }
-    return stepsTaken;
-  });
+    return getDiffs(reductions, [...history, numbers]);
+  }
 
-  return stepsRequiredPer.reduce((acc, steps) => lowestCommonMultiple(acc, steps));
+  return getDiffs(lineNums);
 }
-
-const greatestCommonDivisor = (x: number, y: number): number => (!y ? x : greatestCommonDivisor(y, x % y));
-
-const lowestCommonMultiple = (x: number, y: number): number => (x * y) / greatestCommonDivisor(x, y);
-
